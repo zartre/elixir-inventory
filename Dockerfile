@@ -1,19 +1,17 @@
-# Dockerfile to run the Elixir Inventory Management System
+# Use the official Elixir image (Alpine version is tiny)
+FROM elixir:1.15-alpine
 
-FROM elixir:1.14
-
-# Set the working directory
+# Create a directory for the app
 WORKDIR /app
 
-# Install Hex, Rebar, and application dependencies
-RUN mix local.hex --force && \
-    mix local.rebar --force
+# Copy your script into the container
+COPY task_store.ex .
 
-# Copy the code into the Docker container
-COPY . .
+# Since we aren't using a full project, we can't use 'mix'
+# We'll use 'elixirc' to compile the file so it's ready to go
+RUN elixirc task_store.ex
 
-# Install dependencies
-RUN mix deps.get
-
-# Specify the default command to run the Elixir interactive shell
-CMD ["iex", "-S", "mix"]
+# To keep the container running, we need to start the process.
+# Since it's a GenServer, we'll run an Elixir command that
+# starts the store and then stays alive.
+CMD ["elixir", "-e", "TaskStore.start_link(); Process.sleep(:infinity)"]
